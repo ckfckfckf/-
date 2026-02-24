@@ -24,7 +24,7 @@
         #lang-toggle { cursor: pointer; font-weight: bold; padding: 5px 10px; border: 1px solid transparent; transition: all 0.3s; }
         #lang-toggle:hover { color: var(--accent-color); border-color: var(--accent-color); border-radius: 2px; }
 
-        /* 横幅 & 地图 & 表单样式 */
+        /* 横幅 & 地图布局 */
         .page-banner { padding: 160px 0 80px; text-align: center; background-color: var(--bg-light); }
         .page-banner h1 { font-size: 40px; margin-bottom: 15px; letter-spacing: 2px; }
         .page-banner p { color: #666; font-size: 16px; }
@@ -39,7 +39,31 @@
         .p-region { font-size: 13px; font-weight: bold; color: var(--accent-color); letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
         .p-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: var(--primary-color); line-height: 1.3; }
         .p-desc { color: #666; font-size: 15px; line-height: 1.8; margin-bottom: 30px; }
+        
+        /* 默认占位图样式 */
         .p-image-placeholder { width: 100%; height: 180px; background-color: var(--bg-light); display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 14px; border: 1px dashed #ccc; }
+        
+        /* --- 新增：卡片内的小画廊区域 --- */
+        .project-mini-gallery { position: relative; width: 100%; height: 200px; background: #f5f5f5; overflow: hidden; cursor: pointer; border-radius: 2px; display: none; /* 默认隐藏，点击地图后显示 */ }
+        .mini-slider img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .mini-slider img.active { opacity: 1; z-index: 1; }
+        .gallery-hover-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); z-index: 2; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.4s ease; }
+        .project-mini-gallery:hover .gallery-hover-overlay { opacity: 1; }
+        .hover-text { color: #fff; font-size: 12px; letter-spacing: 3px; border-bottom: 1px solid var(--accent-color); padding-bottom: 5px; }
+
+        /* --- 新增：全屏沉浸式画廊弹窗 (Lightbox) --- */
+        .lightbox { position: fixed; inset: 0; background: rgba(15, 15, 15, 0.98); z-index: 9999; overflow-y: auto; display: none; opacity: 0; transition: opacity 0.5s ease; padding: 60px 40px; }
+        .lightbox.active { display: block; opacity: 1; }
+        .close-lightbox { position: fixed; top: 30px; right: 50px; color: #fff; font-size: 50px; font-weight: 100; cursor: pointer; transition: color 0.3s; z-index: 10000; }
+        .close-lightbox:hover { color: var(--accent-color); }
+        .lightbox-header { text-align: center; color: #fff; margin-bottom: 50px; }
+        .lightbox-header h3 { font-size: 28px; font-weight: 300; letter-spacing: 4px; margin-bottom: 10px; }
+        .lightbox-header p { color: #888; font-size: 13px; letter-spacing: 2px; }
+        .lightbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; max-width: 1400px; margin: 0 auto; }
+        .lightbox-grid img { width: 100%; height: auto; object-fit: cover; border-radius: 2px; opacity: 0; transform: translateY(20px); animation: fadeInUp 0.8s forwards; }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* 联系表单样式 */
         .contact-section { padding: 80px 0 120px; }
         .contact-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 60px; }
         .contact-info h3 { font-size: 24px; margin-bottom: 20px; }
@@ -64,7 +88,7 @@
     <header>
         <div class="container nav-inner">
             <a href="index.html" class="logo">
-                <span data-i18n="logo_main" style="border:none; padding:0; margin:0; font-size:26px; color:var(--primary-color);">爵泰家具</span>
+             <span data-i18n="logo_main" style="border:none; padding:0; margin:0; font-size:28px; font-weight:900; color:#000; letter-spacing: 2px;">爵泰家具</span>
                 <span data-i18n="logo_sub">广州爵泰家具有限公司</span>
             </a>
             <nav class="nav-links">
@@ -99,7 +123,17 @@
                     <div class="p-region" id="display-region" data-i18n="map_default_region">请在地图上选择地区</div>
                     <h3 class="p-title" id="display-title" data-i18n="map_default_title">等待探索</h3>
                     <p class="p-desc" id="display-desc" data-i18n="map_default_desc">广州爵泰家具为全球高端客户提供从空间设计、材质甄选到生产落地的全案定制家具服务。点击左侧地图节点查看详情。</p>
+                    
                     <div class="p-image-placeholder" id="display-image" data-i18n="map_img_ph">实拍图画廊区域</div>
+                    
+                    <div class="project-mini-gallery" id="mini-gallery-container" onclick="openLightbox()">
+                        <div class="mini-slider" id="mini-slider">
+                            </div>
+                        <div class="gallery-hover-overlay">
+                            <span class="hover-text" data-i18n="gallery_hover">点击探索完整画廊 / VIEW GALLERY</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -135,6 +169,16 @@
         <div class="container"><p data-i18n="footer_copy">Copyright © 2026 广州爵泰家具有限公司 保留所有权利.</p></div>
     </footer>
 
+    <div id="fullscreen-lightbox" class="lightbox">
+        <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
+        <div class="lightbox-header">
+            <h3 id="lightbox-title"></h3>
+            <p id="lightbox-desc"></p>
+        </div>
+        <div class="lightbox-grid" id="lightbox-content">
+            </div>
+    </div>
+
     <script>
         const translations = {
             zh: {
@@ -143,6 +187,7 @@
                 page_contact_title: "实力见证，触手可及", page_contact_desc: "探索我们的全球落成项目，或直接与专属家居顾问取得联系",
                 map_title: "Global Projects / 全球工程案例", map_desc: "点击地图上的坐标，探索爵泰家具在全球各地的高端定制服务案例",
                 map_default_region: "请在地图上选择地区", map_default_title: "等待探索", map_default_desc: "广州爵泰家具为全球高端客户提供从空间设计、材质甄选到生产落地的全案定制家具服务。点击左侧地图节点查看详情。", map_img_ph: "实拍图画廊区域",
+                gallery_hover: "点击探索完整画廊 / VIEW GALLERY", // 新增画廊翻译
                 contact_info_title: "开启您的专属定制之旅", contact_info_desc: "无论是全屋定制规划、单品采购，还是大型工程项目招投标，我们的专业顾问团队随时准备为您提供卓越的方案与报价。",
                 addr_title: "总部展厅地址", addr_detail: "广州市某某区某某科技产业园 88 号", phone_title: "贵宾服务热线", email_title: "官方合作邮箱",
                 form_name: "您的姓名 Name *", form_phone: "联系电话 Phone *", form_email: "电子邮箱 Email", form_intent: "需求类型 Interest", form_msg: "留言描述 Message", btn_submit: "提交定制需求 Submit",
@@ -155,6 +200,7 @@
                 page_contact_title: "Strength Witnessed, Within Reach", page_contact_desc: "Explore our global completed projects, or contact a dedicated consultant directly.",
                 map_title: "Global Projects", map_desc: "Click the coordinates on the map to explore Juetai Furniture's high-end customized service cases globally.",
                 map_default_region: "Select a region on the map", map_default_title: "Awaiting Exploration", map_default_desc: "Juetai Furniture provides global high-end clients with full-case custom furniture services. Click the map nodes to view details.", map_img_ph: "Actual Project Gallery",
+                gallery_hover: "VIEW FULL GALLERY", // 新增画廊翻译
                 contact_info_title: "Start Your Custom Journey", contact_info_desc: "Whether it's whole-house customization, single item procurement, or project bidding, our team is ready to provide excellent solutions.",
                 addr_title: "Headquarters Showroom", addr_detail: "No. 88, Tech Industrial Park, Guangzhou", phone_title: "VIP Service Hotline", email_title: "Official Email",
                 form_name: "Name *", form_phone: "Phone *", form_email: "Email", form_intent: "Interest", form_msg: "Message", btn_submit: "Submit Request",
@@ -173,35 +219,52 @@
                 const key = el.getAttribute('data-i18n');
                 if (translations[lang] && translations[lang][key]) el.innerText = translations[lang][key];
             });
-            
-            // 触发一个自定义事件，通知地图重新渲染当前选中的文字
             window.dispatchEvent(new Event('languageChanged'));
         }
 
-        // --- 地图数据（支持双语） ---
+        // --- 地图数据扩展：增加了真实的项目高清图片组 ---
         var map = L.map('map').setView([30.0, 100.0], 3);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
 
         var projects = [
-            { coords: [31.2304, 121.4737], color: "#D4AF37", 
+            { 
+              coords: [31.2304, 121.4737], color: "#D4AF37", 
               region: { zh: "国内市场 / China", en: "China Market" }, 
               title: { zh: "上海佘山高尔夫别墅定制", en: "Shanghai Sheshan Golf Villa" }, 
-              desc: { zh: "全屋北美黑胡桃木定制，结合现代极简设计语言，包含地下酒窖、客厅、主卧等全套硬装木作与活动家具。", en: "Whole-house North American Black Walnut customization with modern minimalist design, including wine cellar, living room, and bedroom." } },
-            { coords: [25.2048, 55.2708], color: "#D4AF37", 
+              desc: { zh: "全屋北美黑胡桃木定制，结合现代极简设计语言，包含地下酒窖、客厅、主卧等全套硬装木作与活动家具。", en: "Whole-house North American Black Walnut customization with modern minimalist design, including wine cellar, living room, and bedroom." },
+              images: [
+                  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80",
+                  "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=80",
+                  "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1200&q=80"
+              ] 
+            },
+            { 
+              coords: [25.2048, 55.2708], color: "#D4AF37", 
               region: { zh: "中东市场 / Middle East", en: "Middle East Market" }, 
               title: { zh: "迪拜棕榈岛奢华酒店配套", en: "Dubai Palm Island Luxury Hotel" }, 
-              desc: { zh: "提供抗高温防开裂的特殊处理木作，风格为新古典奢华，大批量供应酒店大堂接待区及 200 套总统套房家具。", en: "Providing specially treated woodwork resistant to high temperatures, neo-classical luxury style, supplying lobby and 200 presidential suites." } },
-            { coords: [34.0522, -118.2437], color: "#D4AF37", 
+              desc: { zh: "提供抗高温防开裂的特殊处理木作，风格为新古典奢华，大批量供应酒店大堂接待区及 200 套总统套房家具。", en: "Providing specially treated woodwork resistant to high temperatures, neo-classical luxury style, supplying lobby and 200 presidential suites." },
+              images: [
+                  "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80",
+                  "https://images.unsplash.com/photo-1577140917170-285929fb55b7?auto=format&fit=crop&w=1200&q=80",
+                  "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=1200&q=80"
+              ] 
+            },
+            { 
+              coords: [34.0522, -118.2437], color: "#D4AF37", 
               region: { zh: "北美市场 / North America", en: "North America Market" }, 
               title: { zh: "洛杉矶比弗利山庄豪宅", en: "Beverly Hills Mansion, LA" }, 
-              desc: { zh: "符合加州严格环保标准，使用 FSC 认证可持续木材，打造极简白橡木全屋定制解决方案。", en: "Compliant with strict California environmental standards, using FSC certified wood to create a minimalist white oak whole-house solution." } }
+              desc: { zh: "符合加州严格环保标准，使用 FSC 认证可持续木材，打造极简白橡木全屋定制解决方案。", en: "Compliant with strict California environmental standards, using FSC certified wood to create a minimalist white oak whole-house solution." },
+              images: [
+                  "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
+                  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80"
+              ] 
+            }
         ];
 
         let currentActiveProject = null;
 
         projects.forEach(function(project) {
             var circleMarker = L.circleMarker(project.coords, { color: project.color, fillColor: project.color, fillOpacity: 0.8, radius: 8, weight: 2 }).addTo(map);
-            
             circleMarker.on('click', function() {
                 currentActiveProject = project;
                 updateMapPanel();
@@ -209,20 +272,81 @@
             });
         });
 
+        // 核心更新：当点击地图标记时，动态注入图片
         function updateMapPanel() {
             if (!currentActiveProject) return;
             const lang = localStorage.getItem('site_lang') || 'zh';
+            
+            // 1. 更新文字
             document.getElementById('display-region').innerText = currentActiveProject.region[lang];
             document.getElementById('display-title').innerText = currentActiveProject.title[lang];
             document.getElementById('display-desc').innerText = currentActiveProject.desc[lang];
-            // 移除 data-i18n 属性，防止它被上面的全站翻译覆盖回默认文字
             document.getElementById('display-region').removeAttribute('data-i18n');
             document.getElementById('display-title').removeAttribute('data-i18n');
             document.getElementById('display-desc').removeAttribute('data-i18n');
+
+            // 2. 隐藏占位符，显示微型画廊容器
+            const placeholder = document.getElementById('display-image');
+            const galleryContainer = document.getElementById('mini-gallery-container');
+            if (placeholder) placeholder.style.display = 'none';
+            galleryContainer.style.display = 'block';
+
+            // 3. 注入微型轮播图片
+            const slider = document.getElementById('mini-slider');
+            slider.innerHTML = ''; // 清空上一组图片
+            currentActiveProject.images.forEach((imgSrc, index) => {
+                const img = document.createElement('img');
+                img.src = imgSrc;
+                if (index === 0) img.classList.add('active'); // 第一张默认显示
+                slider.appendChild(img);
+            });
         }
 
-        // 监听语言切换事件，更新右侧的动态面板文字
         window.addEventListener('languageChanged', updateMapPanel);
+
+        // --- 小画廊自动轮播逻辑 ---
+        setInterval(function() {
+            const slider = document.getElementById('mini-slider');
+            if(!slider) return;
+            let activeImg = slider.querySelector('img.active');
+            if (!activeImg) return;
+            
+            let nextImg = activeImg.nextElementSibling;
+            if (!nextImg || nextImg.tagName !== 'IMG') {
+                nextImg = slider.firstElementChild;
+            }
+            activeImg.classList.remove('active');
+            nextImg.classList.add('active');
+        }, 3500);
+
+        // --- 全屏弹窗逻辑 ---
+        function openLightbox() {
+            if(!currentActiveProject) return;
+            const lang = localStorage.getItem('site_lang') || 'zh';
+            const lightbox = document.getElementById('fullscreen-lightbox');
+            
+            // 填入标题
+            document.getElementById('lightbox-title').innerText = currentActiveProject.title[lang];
+            document.getElementById('lightbox-desc').innerText = currentActiveProject.region[lang];
+
+            // 动态注入高清大图并附加错落的动画延迟
+            const grid = document.getElementById('lightbox-content');
+            grid.innerHTML = ''; 
+            currentActiveProject.images.forEach((imgSrc, index) => {
+                const img = document.createElement('img');
+                img.src = imgSrc; // 实际项目中这里可替换为更大分辨率的图片链接
+                img.style.animationDelay = (index * 0.1) + 's';
+                grid.appendChild(img);
+            });
+
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden'; // 锁定底层网页防滚
+        }
+
+        function closeLightbox() {
+            document.getElementById('fullscreen-lightbox').classList.remove('active');
+            document.body.style.overflow = 'auto'; // 恢复滚动
+        }
 
         document.addEventListener("DOMContentLoaded", function() {
             applyLanguage(localStorage.getItem('site_lang') || 'zh');
